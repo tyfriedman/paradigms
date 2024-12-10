@@ -1,0 +1,96 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <cuda_runtime.h>
+
+const int N = 1000;
+
+/* a utility function to calculate the hash of part of a string */
+/* given the inputs str: "abcdefg", start: 3, end: 6 */
+/* this function will return the hash for "def" which is 193489332 */
+__device__ unsigned int djb2_hash(const char *str, int start, int end) {
+    unsigned int hash = 5381;
+    int c;
+    int i = start;
+    str += start;
+    while (i < end && (c = *str++)) {
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        i++;
+    }
+    return hash;
+}
+
+__global__ void djb2_hash_kernel(const char *input, int *inputLens, unsigned int *output) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // this function should call djb2_hash() to calculate the hash for each input
+    // remember, you do NOT need a loop here, a SINGLE LINE is sufficient
+    // this is a SIMT situation, do not use a loop
+    output[idx] = djb2_hash(input, 0, inputLens[idx]);
+}
+
+
+int main()
+{    
+    /*
+     Your strategy here should be to:
+     1) create memory space to put the text on the host
+     2) read the file into that memory space, with each line as a string (input)
+     3) store the length of each string in a separate int array (inputLens)
+     4) put the strings into one giant string
+     5) copy the "giant string" to the GPU
+     6) run the djb2_hash_kernel
+     7) get the output from the device back into the host (h_output)
+     8) print the output to the screen (the for loop I provide below)
+     */
+
+    // 1
+    char * input;
+    int * inputLens;
+    unsigned int * output;
+    cudaMalloc((void **)&input, N * sizeof(char));
+    cudaMalloc((void **)&inputLens, N * sizeof(int));
+    cudaMalloc((void **)&output, N * sizeof(unsigned int));
+
+    // 2, 3, 4
+    char *h_input;
+    int *h_inputLens;
+    h_input = (char *)malloc(N * 10 * sizeof(char));
+    h_inputLens = (int *)malloc(N * sizeof(int));
+    
+    FILE *file = fopen("random_strings.txt", "r");
+    
+    char *current_pos = h_input;
+    for (int i = 0; i < N; i++) {
+        if (fgets(current_pos, 10, file) != NULL) {
+            h_inputLens[i] = strlen(current_pos);
+            current_pos += 10;
+        }
+    }
+    fclose(file);
+    
+    // 5
+    cudaMemcpy(input, h_input, N * 10 * sizeof(char), cudaMemcpyHostToDevice);
+    cudaMemcpy(inputLens, h_inputLens, N * sizeof(int), cudaMemcpyHostToDevice);
+    
+    // 7
+    djb2_hash_kernel<<<N, 10>>>(input, inputLens, output);
+
+    // 8
+    unsigned int *h_output = (unsigned int *)malloc(N * sizeof(unsigned int));
+    cudaMemcpy(h_output, output, N * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < N; i++)
+    {
+        printf("%d: string %s hash %u\n", i, input[i], h_output[i]);
+    }
+    
+    free(h_input);
+    free(h_inputLens);
+    free(h_output);
+    cudaFree(input);
+    cudaFree(inputLens);
+    cudaFree(output);
+
+    return 0;
+}

@@ -1,0 +1,1 @@
+The difficulty is set in PGame.java by setting the input to my game to be either 1, 2, or 3.
