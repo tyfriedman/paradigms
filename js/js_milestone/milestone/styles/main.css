@@ -1,0 +1,46 @@
+body {
+    background-color: #577b9f;  /* Light gray - change this to any color you want */
+    margin: 0;  /* Optional: removes default margin */
+}
+
+#middleDiv {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+
+#middleDiv > * {
+	margin: 0 20px;
+}
+
+#ratingLabel {
+    font-size: 20px;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+
+#titleLabel {
+    font-size: 35px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 25px;
+    width: 120px;
+    height: 60px;
+	background-color: #FFD700;
+}
+
+.movieImg {
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	border: 10px solid #000000;
+}
